@@ -28,13 +28,13 @@ class Personagem {
         this.movendo = false;
     }
     animar() {
-        if(this.movendo){
+        if (this.movendo) {
             this.frameCount++;
-            if(this.frameCount % 10 === 0){ 
+            if (this.frameCount % 10 === 0){ 
                 this.spriteIndex = (this.spriteIndex + 1) % this.sprites[this.direcao].length;
             }
         } else {
-            this.spriteIndex = 0; // parar na primeira sprite da direção
+            this.spriteIndex = 0; // frame parado
         }
     }
     draw() {
@@ -106,20 +106,20 @@ const win = new Audio("sons/win.mp3");
 // -------------------------
 const spriteFrames = {
     down: [
-        {img:spritesImg, sx:0, sy:0, sw:44, sh:44},
-        {img:spritesImg, sx:0, sy:44, sw:44, sh:44}
+        {img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44},
+        {img: spritesImg, sx: 44, sy: 0, sw: 44, sh: 44}
     ],
     up: [
-        {img:spritesImg, sx:0, sy:88, sw:44, sh:44},
-        {img:spritesImg, sx:0, sy:132, sw:44, sh:44}
+        {img: spritesImg, sx: 0, sy: 44, sw: 44, sh: 44},
+        {img: spritesImg, sx: 44, sy: 44, sw: 44, sh: 44}
     ],
     left: [
-        {img:spritesImg, sx:0, sy:176, sw:44, sh:44},
-        {img:spritesImg, sx:0, sy:220, sw:44, sh:44}
+        {img: spritesImg, sx: 0, sy: 88, sw: 44, sh: 44},
+        {img: spritesImg, sx: 44, sy: 88, sw: 44, sh: 44}
     ],
     right: [
-        {img:spritesImg, sx:0, sy:264, sw:44, sh:44},
-        {img:spritesImg, sx:0, sy:308, sw:44, sh:44}
+        {img: spritesImg, sx: 0, sy: 132, sw: 44, sh: 44},
+        {img: spritesImg, sx: 44, sy: 132, sw: 44, sh: 44}
     ]
 };
 
@@ -162,16 +162,12 @@ const obstaculos = [
 let teclas = {};
 document.addEventListener("keydown", e => {
     teclas[e.key] = true;
-    entregador.movendo = true;
     if(!musicaIniciada){
         musicaFundo.play();
         musicaIniciada = true;
     }
 });
-document.addEventListener("keyup", e => {
-    teclas[e.key] = false;
-    entregador.movendo = false;
-});
+document.addEventListener("keyup", e => teclas[e.key] = false);
 
 // -------------------------
 // Colisão
@@ -201,10 +197,12 @@ function checarColisaoObstaculo(nx, ny){
 function moverPersonagem(){
     let nx = entregador.x;
     let ny = entregador.y;
-    if(teclas["ArrowUp"] && entregador.y > 0){ ny -= velocidadePersonagem; entregador.direcao="up"; }
-    if(teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura){ ny += velocidadePersonagem; entregador.direcao="down"; }
-    if(teclas["ArrowLeft"] && entregador.x > 0){ nx -= velocidadePersonagem; entregador.direcao="left"; }
-    if(teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura){ nx += velocidadePersonagem; entregador.direcao="right"; }
+    entregador.movendo = false;
+
+    if(teclas["ArrowUp"] && entregador.y > 0){ ny -= velocidadePersonagem; entregador.direcao="up"; entregador.movendo = true; }
+    if(teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura){ ny += velocidadePersonagem; entregador.direcao="down"; entregador.movendo = true; }
+    if(teclas["ArrowLeft"] && entregador.x > 0){ nx -= velocidadePersonagem; entregador.direcao="left"; entregador.movendo = true; }
+    if(teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura){ nx += velocidadePersonagem; entregador.direcao="right"; entregador.movendo = true; }
 
     if(!checarColisaoObstaculo(nx, ny)){
         entregador.x = nx;
@@ -250,7 +248,7 @@ function checarEntregas(){
 // Fim ou vitória
 // -------------------------
 function checarFim(){
-    if(contTotal === casas.length){
+    if(contTotal === 3){
         jogoAtivo = false;
         musicaFundo.pause();
         ctx.drawImage(venceu,0,0);
