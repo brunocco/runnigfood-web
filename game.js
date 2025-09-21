@@ -25,11 +25,16 @@ class Personagem {
         this.spriteIndex = 0;
         this.frameCount = 0;
         this.direcao = "down"; // down, up, left, right
+        this.movendo = false;
     }
     animar() {
-        this.frameCount++;
-        if(this.frameCount % 10 === 0){ 
-            this.spriteIndex = (this.spriteIndex + 1) % this.sprites[this.direcao].length;
+        if(this.movendo){
+            this.frameCount++;
+            if(this.frameCount % 10 === 0){ 
+                this.spriteIndex = (this.spriteIndex + 1) % this.sprites[this.direcao].length;
+            }
+        } else {
+            this.spriteIndex = 0; // parar na primeira sprite da direção
         }
     }
     draw() {
@@ -141,7 +146,6 @@ const casas = [
     {x:635, y:130, entregue:false}
 ];
 
-// Obstáculos (ex: cercas, plantas, etc)
 const obstaculos = [
     {x:0, y:450, largura:582, altura:162},
     {x:0, y:142, largura:115, altura:90},
@@ -158,12 +162,16 @@ const obstaculos = [
 let teclas = {};
 document.addEventListener("keydown", e => {
     teclas[e.key] = true;
+    entregador.movendo = true;
     if(!musicaIniciada){
         musicaFundo.play();
         musicaIniciada = true;
     }
 });
-document.addEventListener("keyup", e => teclas[e.key] = false);
+document.addEventListener("keyup", e => {
+    teclas[e.key] = false;
+    entregador.movendo = false;
+});
 
 // -------------------------
 // Colisão
@@ -188,7 +196,7 @@ function checarColisaoObstaculo(nx, ny){
 }
 
 // -------------------------
-// Movimentação personagem com colisão
+// Movimentação personagem
 // -------------------------
 function moverPersonagem(){
     let nx = entregador.x;
@@ -242,7 +250,7 @@ function checarEntregas(){
 // Fim ou vitória
 // -------------------------
 function checarFim(){
-    if(contTotal === 3){
+    if(contTotal === casas.length){
         jogoAtivo = false;
         musicaFundo.pause();
         ctx.drawImage(venceu,0,0);
