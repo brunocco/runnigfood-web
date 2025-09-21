@@ -10,6 +10,7 @@ let contVidas = 3;
 let contTempo = 120;
 let contTotal = 0;
 let jogoAtivo = true;
+let musicaIniciada = false;
 
 // -------------------------
 // Personagem com sprites
@@ -23,15 +24,16 @@ class Personagem {
         this.sprites = sprites;
         this.spriteIndex = 0;
         this.frameCount = 0;
+        this.direcao = "down"; // down, up, left, right
     }
     animar() {
         this.frameCount++;
-        if(this.frameCount % 10 === 0){ // muda sprite a cada 10 frames
-            this.spriteIndex = (this.spriteIndex + 1) % this.sprites.length;
+        if(this.frameCount % 10 === 0){ 
+            this.spriteIndex = (this.spriteIndex + 1) % this.sprites[this.direcao].length;
         }
     }
     draw() {
-        const s = this.sprites[this.spriteIndex];
+        const s = this.sprites[this.direcao][this.spriteIndex];
         ctx.drawImage(
             s.img,
             s.sx, s.sy, s.sw, s.sh,
@@ -53,7 +55,7 @@ class Carro {
     mover() {
         this.x += velocidadeCarros * this.dir;
         if(this.dir === 1 && this.x > canvas.width + 100) this.x = -Math.random()*1000;
-        if(this.dir === -1 && this.x < -100) this.x = 800 + Math.random()*1000;
+        if(this.dir === -1 && this.x < -100) this.x = canvas.width + Math.random()*1000;
     }
 }
 
@@ -89,20 +91,32 @@ const venceu = carregarImagem("imagens/venceu.png");
 // -------------------------
 // Sons
 // -------------------------
-const musicaFundo = new Audio("sons/musica_fundo.mp3"); musicaFundo.loop = true; musicaFundo.play();
+const musicaFundo = new Audio("sons/musica_fundo.mp3"); musicaFundo.loop = true;
 const batidaCarro = new Audio("sons/batida.mp3");
 const casaOk = new Audio("sons/casa_ok.mp3");
 const win = new Audio("sons/win.mp3");
 
 // -------------------------
-// Sprites do personagem
+// Sprites do personagem por direção
 // -------------------------
-const spriteFrames = [
-    {img:spritesImg, sx:0, sy:0, sw:44, sh:44},
-    {img:spritesImg, sx:0, sy:44, sw:44, sh:44},
-    {img:spritesImg, sx:0, sy:88, sw:44, sh:44},
-    {img:spritesImg, sx:0, sy:132, sw:44, sh:44}
-];
+const spriteFrames = {
+    down: [
+        {img:spritesImg, sx:0, sy:0, sw:44, sh:44},
+        {img:spritesImg, sx:0, sy:44, sw:44, sh:44}
+    ],
+    up: [
+        {img:spritesImg, sx:0, sy:88, sw:44, sh:44},
+        {img:spritesImg, sx:0, sy:132, sw:44, sh:44}
+    ],
+    left: [
+        {img:spritesImg, sx:0, sy:176, sw:44, sh:44},
+        {img:spritesImg, sx:0, sy:220, sw:44, sh:44}
+    ],
+    right: [
+        {img:spritesImg, sx:0, sy:264, sw:44, sh:44},
+        {img:spritesImg, sx:0, sy:308, sw:44, sh:44}
+    ]
+};
 
 let entregador = new Personagem(595, 550, 44, 44, spriteFrames);
 
@@ -119,7 +133,7 @@ let carros = [
 ];
 
 // -------------------------
-// Casas
+// Casas e obstáculos
 // -------------------------
 const casas = [
     {x:120, y:130, entregue:false},
@@ -127,19 +141,29 @@ const casas = [
     {x:635, y:130, entregue:false}
 ];
 
+// Obstáculos (ex: cercas, plantas, etc)
+const obstaculos = [
+    {x:0, y:450, largura:582, altura:162},
+    {x:0, y:142, largura:115, altura:90},
+    {x:168, y:142, largura:198, altura:90},
+    {x:325, y:125, largura:42, altura:90},
+    {x:420, y:142, largura:200, altura:90},
+    {x:600, y:142, largura:30, altura:87},
+    {x:680, y:142, largura:133, altura:90}
+];
+
 // -------------------------
 // Controles
 // -------------------------
 let teclas = {};
-document.addEventListener("keydown", e => teclas[e.key] = true);
+document.addEventListener("keydown", e => {
+    teclas[e.key] = true;
+    if(!musicaIniciada){
+        musicaFundo.play();
+        musicaIniciada = true;
+    }
+});
 document.addEventListener("keyup", e => teclas[e.key] = false);
-
-function moverPersonagem(){
-    if(teclas["ArrowUp"] && entregador.y > 0) entregador.y -= velocidadePersonagem;
-    if(teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura) entregador.y += velocidadePersonagem;
-    if(teclas["ArrowLeft"] && entregador.x > 0) entregador.x -= velocidadePersonagem;
-    if(teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura) entregador.x += velocidadePersonagem;
-}
 
 // -------------------------
 // Colisão
@@ -149,6 +173,35 @@ function checarColisao(carro){
            entregador.x + entregador.largura > carro.x &&
            entregador.y < carro.y + 30 &&
            entregador.y + entregador.altura > carro.y;
+}
+
+function checarColisaoObstaculo(nx, ny){
+    for(let obs of obstaculos){
+        if(nx < obs.x + obs.largura &&
+           nx + entregador.largura > obs.x &&
+           ny < obs.y + obs.altura &&
+           ny + entregador.altura > obs.y){
+               return true;
+        }
+    }
+    return false;
+}
+
+// -------------------------
+// Movimentação personagem com colisão
+// -------------------------
+function moverPersonagem(){
+    let nx = entregador.x;
+    let ny = entregador.y;
+    if(teclas["ArrowUp"] && entregador.y > 0){ ny -= velocidadePersonagem; entregador.direcao="up"; }
+    if(teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura){ ny += velocidadePersonagem; entregador.direcao="down"; }
+    if(teclas["ArrowLeft"] && entregador.x > 0){ nx -= velocidadePersonagem; entregador.direcao="left"; }
+    if(teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura){ nx += velocidadePersonagem; entregador.direcao="right"; }
+
+    if(!checarColisaoObstaculo(nx, ny)){
+        entregador.x = nx;
+        entregador.y = ny;
+    }
 }
 
 // -------------------------
@@ -194,12 +247,12 @@ function checarFim(){
         musicaFundo.pause();
         ctx.drawImage(venceu,0,0);
         win.play();
-        setTimeout(resetGame,5000); // reset automático
+        setTimeout(resetGame,5000);
     } else if(contVidas === 0 || contTempo <= 0){
         jogoAtivo = false;
         musicaFundo.pause();
         ctx.drawImage(fim,0,0);
-        setTimeout(resetGame,5000); // reset automático
+        setTimeout(resetGame,5000);
     }
 }
 
@@ -216,7 +269,7 @@ function resetGame(){
     jogoAtivo = true;
     musicaFundo.currentTime = 0;
     musicaFundo.play();
-    gameLoop();
+    requestAnimationFrame(gameLoop);
 }
 
 // -------------------------
@@ -264,4 +317,4 @@ setInterval(()=>{
 // -------------------------
 // Iniciar jogo
 // -------------------------
-gameLoop();
+requestAnimationFrame(gameLoop);
