@@ -14,7 +14,7 @@ let musicaIniciada = false;
 let ultimoTimestamp = Date.now(); // para atualizar o tempo
 
 // -------------------------
-// Personagem com sprites
+// Personagem com sprites (sem piscar)
 // -------------------------
 class Personagem {
     constructor(x, y, largura, altura, sprites) {
@@ -23,18 +23,10 @@ class Personagem {
         this.largura = largura;
         this.altura = altura;
         this.sprites = sprites;
-        this.spriteIndex = 0;
-        this.frameCount = 0;
         this.direcao = "down"; // down, up, left, right
     }
-    animar() {
-        this.frameCount++;
-        if (this.frameCount % 10 === 0) {
-            this.spriteIndex = (this.spriteIndex + 1) % this.sprites[this.direcao].length;
-        }
-    }
     draw() {
-        const s = this.sprites[this.direcao][this.spriteIndex];
+        const s = this.sprites[this.direcao][0]; // sempre o primeiro sprite, sem piscar
         ctx.drawImage(
             s.img,
             s.sx, s.sy, s.sw, s.sh,
@@ -102,20 +94,16 @@ const win = new Audio("sons/win.mp3");
 // -------------------------
 const spriteFrames = {
     down: [
-        { img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44 },
-        { img: spritesImg, sx: 44, sy: 0, sw: 44, sh: 44 }
+        { img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44 }
     ],
     left: [
-        { img: spritesImg, sx: 0, sy: 44, sw: 44, sh: 44 },
-        { img: spritesImg, sx: 44, sy: 44, sw: 44, sh: 44 }
+        { img: spritesImg, sx: 0, sy: 44, sw: 44, sh: 44 }
     ],
     right: [
-        { img: spritesImg, sx: 0, sy: 88, sw: 44, sh: 44 },
-        { img: spritesImg, sx: 44, sy: 88, sw: 44, sh: 44 }
+        { img: spritesImg, sx: 0, sy: 88, sw: 44, sh: 44 }
     ],
     up: [
-        { img: spritesImg, sx: 0, sy: 132, sw: 44, sh: 44 },
-        { img: spritesImg, sx: 44, sy: 132, sw: 44, sh: 44 }
+        { img: spritesImg, sx: 0, sy: 132, sw: 44, sh: 44 }
     ]
 };
 
@@ -188,66 +176,31 @@ function checarColisaoObstaculo(nx, ny) {
 }
 
 // -------------------------
-// Movimentação personagem com colisão e barramentos
+// Movimentação personagem com colisão
 // -------------------------
 function moverPersonagem() {
     let nx = entregador.x;
     let ny = entregador.y;
-    let andando = false;
 
-    if (teclas["ArrowUp"] && entregador.y > 0) { ny -= velocidadePersonagem; entregador.direcao = "up"; andando = true; }
-    if (teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura) { ny += velocidadePersonagem; entregador.direcao = "down"; andando = true; }
-    if (teclas["ArrowLeft"] && entregador.x > 0) { nx -= velocidadePersonagem; entregador.direcao = "left"; andando = true; }
-    if (teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura) { nx += velocidadePersonagem; entregador.direcao = "right"; andando = true; }
+    if (teclas["ArrowUp"] && entregador.y > 0) { ny -= velocidadePersonagem; entregador.direcao = "up"; }
+    if (teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura) { ny += velocidadePersonagem; entregador.direcao = "down"; }
+    if (teclas["ArrowLeft"] && entregador.x > 0) { nx -= velocidadePersonagem; entregador.direcao = "left"; }
+    if (teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura) { nx += velocidadePersonagem; entregador.direcao = "right"; }
 
-    // checa entregas
-    casas.forEach(casa => {
-        if (!casa.entregue &&
-            nx + entregador.largura > casa.x &&
-            nx < casa.x + 35 &&
-            ny < casa.y + 10
-        ) {
-            casa.entregue = true;
-            contTotal++;
-            casaOk.currentTime = 0;
-            casaOk.play();
-        }
-    });
-
-    // trava movimento para cima se estiver sobre casa já entregue
-    casas.forEach(casa => {
-        if (casa.entregue &&
-            nx + entregador.largura > casa.x &&
-            nx < casa.x + 35 &&
-            ny < casa.y + 10
-        ) {
-            if (teclas["ArrowUp"]) {
-                ny = casa.y + 10; // trava no topo da casa
+    // Não ultrapassar casas entregues
+    for (let casa of casas) {
+        if (casa.entregue) {
+            let casaTopo = casa.y;
+            if (ny < casaTopo && nx + entregador.largura > casa.x && nx < casa.x + 35) {
+                ny = casaTopo; // trava o entregador no topo da casa
             }
-        }
-    });
-
-    // barramentos de obstáculos
-    for (let obs of obstaculos) {
-        if (nx + entregador.largura > obs.x &&
-            nx < obs.x + obs.largura &&
-            ny + entregador.altura > obs.y &&
-            ny < obs.y + obs.altura
-        ) {
-            if (ny < obs.y + obs.altura / 2) ny -= 1;
-            else ny += 1;
-            if (nx < obs.x + obs.largura / 2) nx -= 1;
-            else nx += 1;
         }
     }
 
-    // colisão final
     if (!checarColisaoObstaculo(nx, ny)) {
         entregador.x = nx;
         entregador.y = ny;
     }
-
-    if (andando) { entregador.animar(); } else { entregador.spriteIndex = 0; }
 }
 
 // -------------------------
@@ -262,6 +215,24 @@ function atualizarCarros() {
             entregador.x = 595;
             entregador.y = 550;
             contVidas--;
+        }
+    });
+}
+
+// -------------------------
+// Entregas
+// -------------------------
+function checarEntregas() {
+    casas.forEach(casa => {
+        if (!casa.entregue &&
+            entregador.x + entregador.largura > casa.x &&
+            entregador.x < casa.x + 35 &&
+            entregador.y < casa.y + 10
+        ) {
+            casa.entregue = true;
+            contTotal++;
+            casaOk.currentTime = 0;
+            casaOk.play();
         }
     });
 }
@@ -302,19 +273,6 @@ function resetGame() {
 }
 
 // -------------------------
-// Atualiza tempo
-// -------------------------
-function atualizarTempo() {
-    const agora = Date.now();
-    if (jogoAtivo && contTempo > 0) {
-        if (agora - ultimoTimestamp >= 1000) {
-            contTempo--;
-            ultimoTimestamp = agora;
-        }
-    }
-}
-
-// -------------------------
 // Loop principal
 // -------------------------
 function gameLoop() {
@@ -326,16 +284,23 @@ function gameLoop() {
     // vidas
     ctx.drawImage(vidasImgs[contVidas], 7, 17);
 
-    // atualizar tempo
-    atualizarTempo();
-
     // temporizador com fundo branco
-    const tempoX = 740, tempoY = 50, tempoWidth = 60, tempoHeight = 40;
+    const tempoX = 740;
+    const tempoY = 50;
+    const tempoWidth = 60;
+    const tempoHeight = 40;
     ctx.fillStyle = "white";
     ctx.fillRect(tempoX - 5, tempoY - 30, tempoWidth, tempoHeight);
     ctx.font = "30px Comic Sans MS";
     ctx.fillStyle = "black";
     ctx.fillText(contTempo, tempoX, tempoY);
+
+    // atualizar tempo
+    const agora = Date.now();
+    if (jogoAtivo && contTempo > 0 && agora - ultimoTimestamp >= 1000) {
+        contTempo--;
+        ultimoTimestamp = agora;
+    }
 
     // personagem
     moverPersonagem();
@@ -344,6 +309,9 @@ function gameLoop() {
     // carros
     atualizarCarros();
     carros.forEach(carro => ctx.drawImage(carro.img, carro.x, carro.y));
+
+    // entregas
+    checarEntregas();
 
     // fim ou vitória
     checarFim();
