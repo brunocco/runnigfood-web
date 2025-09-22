@@ -11,6 +11,7 @@ let contTempo = 120;
 let contTotal = 0;
 let jogoAtivo = true;
 let musicaIniciada = false;
+let ultimoTimestamp = Date.now(); // para atualizar o tempo
 
 // -------------------------
 // Personagem com sprites
@@ -28,7 +29,7 @@ class Personagem {
     }
     animar() {
         this.frameCount++;
-        if(this.frameCount % 10 === 0){ 
+        if (this.frameCount % 10 === 0) {
             this.spriteIndex = (this.spriteIndex + 1) % this.sprites[this.direcao].length;
         }
     }
@@ -46,7 +47,7 @@ class Personagem {
 // Carro
 // -------------------------
 class Carro {
-    constructor(img, x, y, dir=1){
+    constructor(img, x, y, dir = 1) {
         this.img = img;
         this.x = x;
         this.y = y;
@@ -54,15 +55,15 @@ class Carro {
     }
     mover() {
         this.x += velocidadeCarros * this.dir;
-        if(this.dir === 1 && this.x > canvas.width + 100) this.x = -Math.random()*1000;
-        if(this.dir === -1 && this.x < -100) this.x = canvas.width + Math.random()*1000;
+        if (this.dir === 1 && this.x > canvas.width + 100) this.x = -Math.random() * 1000;
+        if (this.dir === -1 && this.x < -100) this.x = canvas.width + Math.random() * 1000;
     }
 }
 
 // -------------------------
 // Função para carregar imagem
 // -------------------------
-function carregarImagem(src){ const img = new Image(); img.src = src; return img; }
+function carregarImagem(src) { const img = new Image(); img.src = src; return img; }
 
 // -------------------------
 // Imagens
@@ -101,20 +102,20 @@ const win = new Audio("sons/win.mp3");
 // -------------------------
 const spriteFrames = {
     down: [
-        {img:spritesImg, sx:0, sy:0, sw:44, sh:44},
-        {img:spritesImg, sx:44, sy:0, sw:44, sh:44}
+        { img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44 },
+        { img: spritesImg, sx: 44, sy: 0, sw: 44, sh: 44 }
     ],
     left: [
-        {img:spritesImg, sx:0, sy:44, sw:44, sh:44},
-        {img:spritesImg, sx:44, sy:44, sw:44, sh:44}
+        { img: spritesImg, sx: 0, sy: 44, sw: 44, sh: 44 },
+        { img: spritesImg, sx: 44, sy: 44, sw: 44, sh: 44 }
     ],
     right: [
-        {img:spritesImg, sx:0, sy:88, sw:44, sh:44},
-        {img:spritesImg, sx:44, sy:88, sw:44, sh:44}
+        { img: spritesImg, sx: 0, sy: 88, sw: 44, sh: 44 },
+        { img: spritesImg, sx: 44, sy: 88, sw: 44, sh: 44 }
     ],
     up: [
-        {img:spritesImg, sx:0, sy:132, sw:44, sh:44},
-        {img:spritesImg, sx:44, sy:132, sw:44, sh:44}
+        { img: spritesImg, sx: 0, sy: 132, sw: 44, sh: 44 },
+        { img: spritesImg, sx: 44, sy: 132, sw: 44, sh: 44 }
     ]
 };
 
@@ -136,19 +137,19 @@ let carros = [
 // Casas e obstáculos
 // -------------------------
 const casas = [
-    {x:120, y:130, entregue:false},
-    {x:370, y:130, entregue:false},
-    {x:635, y:130, entregue:false}
+    { x: 120, y: 130, entregue: false },
+    { x: 370, y: 130, entregue: false },
+    { x: 635, y: 130, entregue: false }
 ];
 
 const obstaculos = [
-    {x:0, y:450, largura:582, altura:162},
-    {x:0, y:142, largura:115, altura:90},
-    {x:168, y:142, largura:198, altura:90},
-    {x:325, y:125, largura:42, altura:90},
-    {x:420, y:142, largura:200, altura:90},
-    {x:600, y:142, largura:30, altura:87},
-    {x:680, y:142, largura:133, altura:90}
+    { x: 0, y: 450, largura: 582, altura: 162 },
+    { x: 0, y: 142, largura: 115, altura: 90 },
+    { x: 168, y: 142, largura: 198, altura: 90 },
+    { x: 325, y: 125, largura: 42, altura: 90 },
+    { x: 420, y: 142, largura: 200, altura: 90 },
+    { x: 600, y: 142, largura: 30, altura: 87 },
+    { x: 680, y: 142, largura: 133, altura: 90 }
 ];
 
 // -------------------------
@@ -157,7 +158,7 @@ const obstaculos = [
 let teclas = {};
 document.addEventListener("keydown", e => {
     teclas[e.key] = true;
-    if(!musicaIniciada){
+    if (!musicaIniciada) {
         musicaFundo.play();
         musicaIniciada = true;
     }
@@ -167,20 +168,20 @@ document.addEventListener("keyup", e => teclas[e.key] = false);
 // -------------------------
 // Colisão
 // -------------------------
-function checarColisao(carro){
+function checarColisao(carro) {
     return entregador.x < carro.x + 55 &&
-           entregador.x + entregador.largura > carro.x &&
-           entregador.y < carro.y + 30 &&
-           entregador.y + entregador.altura > carro.y;
+        entregador.x + entregador.largura > carro.x &&
+        entregador.y < carro.y + 30 &&
+        entregador.y + entregador.altura > carro.y;
 }
 
-function checarColisaoObstaculo(nx, ny){
-    for(let obs of obstaculos){
-        if(nx < obs.x + obs.largura &&
-           nx + entregador.largura > obs.x &&
-           ny < obs.y + obs.altura &&
-           ny + entregador.altura > obs.y){
-               return true;
+function checarColisaoObstaculo(nx, ny) {
+    for (let obs of obstaculos) {
+        if (nx < obs.x + obs.largura &&
+            nx + entregador.largura > obs.x &&
+            ny < obs.y + obs.altura &&
+            ny + entregador.altura > obs.y) {
+            return true;
         }
     }
     return false;
@@ -189,28 +190,28 @@ function checarColisaoObstaculo(nx, ny){
 // -------------------------
 // Movimentação personagem com colisão
 // -------------------------
-function moverPersonagem(){
+function moverPersonagem() {
     let nx = entregador.x;
     let ny = entregador.y;
+    let andando = false;
 
-    if(teclas["ArrowUp"] && entregador.y > 0){ ny -= velocidadePersonagem; entregador.direcao="up"; }
-    if(teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura){ ny += velocidadePersonagem; entregador.direcao="down"; }
-    if(teclas["ArrowLeft"] && entregador.x > 0){ nx -= velocidadePersonagem; entregador.direcao="left"; }
-    if(teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura){ nx += velocidadePersonagem; entregador.direcao="right"; }
+    if (teclas["ArrowUp"] && entregador.y > 0) { ny -= velocidadePersonagem; entregador.direcao = "up"; andando = true; }
+    if (teclas["ArrowDown"] && entregador.y < canvas.height - entregador.altura) { ny += velocidadePersonagem; entregador.direcao = "down"; andando = true; }
+    if (teclas["ArrowLeft"] && entregador.x > 0) { nx -= velocidadePersonagem; entregador.direcao = "left"; andando = true; }
+    if (teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura) { nx += velocidadePersonagem; entregador.direcao = "right"; andando = true; }
 
-    if(!checarColisaoObstaculo(nx, ny)){
-        entregador.x = nx;
-        entregador.y = ny;
-    }
+    if (!checarColisaoObstaculo(nx, ny)) { entregador.x = nx; entregador.y = ny; }
+
+    if (andando) { entregador.animar(); } else { entregador.spriteIndex = 0; }
 }
 
 // -------------------------
 // Atualização carros
 // -------------------------
-function atualizarCarros(){
+function atualizarCarros() {
     carros.forEach(carro => {
         carro.mover();
-        if(checarColisao(carro)){
+        if (checarColisao(carro)) {
             batidaCarro.currentTime = 0;
             batidaCarro.play();
             entregador.x = 595;
@@ -223,13 +224,13 @@ function atualizarCarros(){
 // -------------------------
 // Entregas
 // -------------------------
-function checarEntregas(){
-    casas.forEach(casa=>{
-        if(!casa.entregue &&
-           entregador.x + entregador.largura > casa.x &&
-           entregador.x < casa.x + 35 &&
-           entregador.y < casa.y + 10
-        ){
+function checarEntregas() {
+    casas.forEach(casa => {
+        if (!casa.entregue &&
+            entregador.x + entregador.largura > casa.x &&
+            entregador.x < casa.x + 35 &&
+            entregador.y < casa.y + 10
+        ) {
             casa.entregue = true;
             contTotal++;
             casaOk.currentTime = 0;
@@ -241,57 +242,91 @@ function checarEntregas(){
 // -------------------------
 // Fim ou vitória
 // -------------------------
-function checarFim(){
-    if(contTotal === 3){
+function checarFim() {
+    if (contTotal === 3) {
         jogoAtivo = false;
         musicaFundo.pause();
-        ctx.drawImage(venceu,0,0);
+        ctx.drawImage(venceu, 0, 0);
         win.play();
-        setTimeout(resetGame,5000);
-    } else if(contVidas === 0 || contTempo <= 0){
+        setTimeout(resetGame, 5000);
+    } else if (contVidas === 0 || contTempo <= 0) {
         jogoAtivo = false;
         musicaFundo.pause();
-        ctx.drawImage(fim,0,0);
-        setTimeout(resetGame,5000);
+        ctx.drawImage(fim, 0, 0);
+        setTimeout(resetGame, 5000);
     }
 }
 
 // -------------------------
 // Reset do jogo
 // -------------------------
-function resetGame(){
+function resetGame() {
     contVidas = 3;
     contTempo = 120;
     contTotal = 0;
-    casas.forEach(c => c.entregue=false);
+    casas.forEach(c => c.entregue = false);
     entregador.x = 595;
     entregador.y = 550;
     jogoAtivo = true;
     musicaFundo.currentTime = 0;
     musicaFundo.play();
+    ultimoTimestamp = Date.now();
     requestAnimationFrame(gameLoop);
 }
 
 // -------------------------
+// Atualiza tempo dentro do gameLoop
+// -------------------------
+function atualizarTempo() {
+    const agora = Date.now();
+    if (jogoAtivo && contTempo > 0) {
+        if (agora - ultimoTimestamp >= 1000) {
+            contTempo--;
+            ultimoTimestamp = agora;
+        }
+    }
+}
+
+
+
+// -------------------------
 // Loop principal
 // -------------------------
-function gameLoop(){
-    if(!jogoAtivo) return;
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(cenario,0,0);
+
+function gameLoop() {
+    if (!jogoAtivo) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cenario, 0, 0);
 
     // vidas
     ctx.drawImage(vidasImgs[contVidas], 7, 17);
 
-    // temporizador
+    // atualizar tempo
+    const agora = Date.now();
+    if (jogoAtivo && contTempo > 0) {
+        if (agora - ultimoTimestamp >= 1000) {
+            contTempo--;
+            ultimoTimestamp = agora;
+        }
+    }
+
+    // temporizador com fundo branco (apenas número)
+    const tempoX = 740;
+    const tempoY = 50;
+    const tempoWidth = 60;
+    const tempoHeight = 40;
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(tempoX - 5, tempoY - 30, tempoWidth, tempoHeight);
+
     ctx.font = "30px Comic Sans MS";
     ctx.fillStyle = "black";
-    ctx.fillText(`TIME: ${contTempo}`, 700, 50);
+    ctx.fillText(contTempo, tempoX, tempoY);
 
     // personagem
     moverPersonagem();
-    entregador.animar();
     entregador.draw();
 
     // carros
@@ -307,12 +342,6 @@ function gameLoop(){
     requestAnimationFrame(gameLoop);
 }
 
-// -------------------------
-// Contador de tempo
-// -------------------------
-setInterval(()=>{
-    if(jogoAtivo && contTempo > 0) contTempo--;
-},1000);
 
 // -------------------------
 // Iniciar jogo
