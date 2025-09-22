@@ -26,12 +26,8 @@ class Personagem {
         this.direcao = "down"; // down, up, left, right
     }
     draw() {
-        const s = this.sprites[this.direcao][0]; // sempre o primeiro sprite, sem piscar
-        ctx.drawImage(
-            s.img,
-            s.sx, s.sy, s.sw, s.sh,
-            this.x, this.y, this.largura, this.altura
-        );
+        const s = this.sprites[this.direcao][0]; // sempre o primeiro sprite
+        ctx.drawImage(s.img, s.sx, s.sy, s.sw, s.sh, this.x, this.y, this.largura, this.altura);
     }
 }
 
@@ -47,8 +43,8 @@ class Carro {
     }
     mover() {
         this.x += velocidadeCarros * this.dir;
-        if (this.dir === 1 && this.x > canvas.width + 100) this.x = -Math.random() * 1000;
-        if (this.dir === -1 && this.x < -100) this.x = canvas.width + Math.random() * 1000;
+        if (this.dir === 1 && this.x > canvas.width + 100) this.x = -Math.random() * 400;
+        if (this.dir === -1 && this.x < -100) this.x = canvas.width + Math.random() * 400;
     }
 }
 
@@ -93,18 +89,10 @@ const win = new Audio("sons/win.mp3");
 // Sprites do personagem por direção
 // -------------------------
 const spriteFrames = {
-    down: [
-        { img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44 }
-    ],
-    left: [
-        { img: spritesImg, sx: 0, sy: 44, sw: 44, sh: 44 }
-    ],
-    right: [
-        { img: spritesImg, sx: 0, sy: 88, sw: 44, sh: 44 }
-    ],
-    up: [
-        { img: spritesImg, sx: 0, sy: 132, sw: 44, sh: 44 }
-    ]
+    down: [{ img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44 }],
+    left: [{ img: spritesImg, sx: 0, sy: 44, sw: 44, sh: 44 }],
+    right: [{ img: spritesImg, sx: 0, sy: 88, sw: 44, sh: 44 }],
+    up: [{ img: spritesImg, sx: 0, sy: 132, sw: 44, sh: 44 }]
 };
 
 let entregador = new Personagem(595, 550, 44, 44, spriteFrames);
@@ -144,14 +132,29 @@ const obstaculos = [
 // Controles
 // -------------------------
 let teclas = {};
-document.addEventListener("keydown", e => {
-    teclas[e.key] = true;
-    if (!musicaIniciada) {
-        musicaFundo.play();
-        musicaIniciada = true;
-    }
-});
+document.addEventListener("keydown", e => { teclas[e.key] = true; if (!musicaIniciada) { musicaFundo.play(); musicaIniciada = true; } });
 document.addEventListener("keyup", e => teclas[e.key] = false);
+
+// -------------------------
+// Controles touch mobile
+// -------------------------
+function criarControlesMobile() {
+    const direcoes = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+    direcoes.forEach(d => {
+        const btn = document.createElement("button");
+        btn.innerText = d.replace("Arrow","");
+        btn.style.position = "absolute";
+        btn.style.bottom = d==="ArrowUp"? "100px": d==="ArrowDown"? "20px": "60px";
+        btn.style.left = d==="ArrowLeft"? "20px": d==="ArrowRight"? "140px": "80px";
+        btn.style.width = "60px";
+        btn.style.height = "60px";
+        btn.style.opacity = 0.5;
+        document.body.appendChild(btn);
+        btn.addEventListener("touchstart", e => { e.preventDefault(); teclas[d] = true; });
+        btn.addEventListener("touchend", e => { e.preventDefault(); teclas[d] = false; });
+    });
+}
+criarControlesMobile();
 
 // -------------------------
 // Colisão
@@ -192,15 +195,12 @@ function moverPersonagem() {
         if (casa.entregue) {
             let casaTopo = casa.y;
             if (ny < casaTopo && nx + entregador.largura > casa.x && nx < casa.x + 35) {
-                ny = casaTopo; // trava o entregador no topo da casa
+                ny = casaTopo; 
             }
         }
     }
 
-    if (!checarColisaoObstaculo(nx, ny)) {
-        entregador.x = nx;
-        entregador.y = ny;
-    }
+    if (!checarColisaoObstaculo(nx, ny)) { entregador.x = nx; entregador.y = ny; }
 }
 
 // -------------------------
@@ -281,39 +281,29 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(cenario, 0, 0);
 
-    // vidas
     ctx.drawImage(vidasImgs[contVidas], 7, 17);
 
-    // temporizador com fundo branco
-    const tempoX = 740;
-    const tempoY = 50;
-    const tempoWidth = 60;
-    const tempoHeight = 40;
+    // temporizador
+    const tempoX = 740, tempoY = 50, tempoWidth = 60, tempoHeight = 40;
     ctx.fillStyle = "white";
     ctx.fillRect(tempoX - 5, tempoY - 30, tempoWidth, tempoHeight);
     ctx.font = "30px Comic Sans MS";
     ctx.fillStyle = "black";
     ctx.fillText(contTempo, tempoX, tempoY);
 
-    // atualizar tempo
     const agora = Date.now();
     if (jogoAtivo && contTempo > 0 && agora - ultimoTimestamp >= 1000) {
         contTempo--;
         ultimoTimestamp = agora;
     }
 
-    // personagem
     moverPersonagem();
     entregador.draw();
 
-    // carros
     atualizarCarros();
     carros.forEach(carro => ctx.drawImage(carro.img, carro.x, carro.y));
 
-    // entregas
     checarEntregas();
-
-    // fim ou vitória
     checarFim();
 
     requestAnimationFrame(gameLoop);
