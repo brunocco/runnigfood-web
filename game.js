@@ -188,7 +188,7 @@ function checarColisaoObstaculo(nx, ny) {
 }
 
 // -------------------------
-// Movimentação personagem com colisão
+// Movimentação personagem com colisão e barramentos
 // -------------------------
 function moverPersonagem() {
     let nx = entregador.x;
@@ -200,7 +200,52 @@ function moverPersonagem() {
     if (teclas["ArrowLeft"] && entregador.x > 0) { nx -= velocidadePersonagem; entregador.direcao = "left"; andando = true; }
     if (teclas["ArrowRight"] && entregador.x < canvas.width - entregador.largura) { nx += velocidadePersonagem; entregador.direcao = "right"; andando = true; }
 
-    if (!checarColisaoObstaculo(nx, ny)) { entregador.x = nx; entregador.y = ny; }
+    // checa entregas
+    casas.forEach(casa => {
+        if (!casa.entregue &&
+            nx + entregador.largura > casa.x &&
+            nx < casa.x + 35 &&
+            ny < casa.y + 10
+        ) {
+            casa.entregue = true;
+            contTotal++;
+            casaOk.currentTime = 0;
+            casaOk.play();
+        }
+    });
+
+    // trava movimento para cima se estiver sobre casa já entregue
+    casas.forEach(casa => {
+        if (casa.entregue &&
+            nx + entregador.largura > casa.x &&
+            nx < casa.x + 35 &&
+            ny < casa.y + 10
+        ) {
+            if (teclas["ArrowUp"]) {
+                ny = casa.y + 10; // trava no topo da casa
+            }
+        }
+    });
+
+    // barramentos de obstáculos
+    for (let obs of obstaculos) {
+        if (nx + entregador.largura > obs.x &&
+            nx < obs.x + obs.largura &&
+            ny + entregador.altura > obs.y &&
+            ny < obs.y + obs.altura
+        ) {
+            if (ny < obs.y + obs.altura / 2) ny -= 1;
+            else ny += 1;
+            if (nx < obs.x + obs.largura / 2) nx -= 1;
+            else nx += 1;
+        }
+    }
+
+    // colisão final
+    if (!checarColisaoObstaculo(nx, ny)) {
+        entregador.x = nx;
+        entregador.y = ny;
+    }
 
     if (andando) { entregador.animar(); } else { entregador.spriteIndex = 0; }
 }
@@ -217,24 +262,6 @@ function atualizarCarros() {
             entregador.x = 595;
             entregador.y = 550;
             contVidas--;
-        }
-    });
-}
-
-// -------------------------
-// Entregas
-// -------------------------
-function checarEntregas() {
-    casas.forEach(casa => {
-        if (!casa.entregue &&
-            entregador.x + entregador.largura > casa.x &&
-            entregador.x < casa.x + 35 &&
-            entregador.y < casa.y + 10
-        ) {
-            casa.entregue = true;
-            contTotal++;
-            casaOk.currentTime = 0;
-            casaOk.play();
         }
     });
 }
@@ -275,7 +302,7 @@ function resetGame() {
 }
 
 // -------------------------
-// Atualiza tempo dentro do gameLoop
+// Atualiza tempo
 // -------------------------
 function atualizarTempo() {
     const agora = Date.now();
@@ -287,13 +314,9 @@ function atualizarTempo() {
     }
 }
 
-
-
 // -------------------------
 // Loop principal
 // -------------------------
-
-
 function gameLoop() {
     if (!jogoAtivo) return;
 
@@ -304,23 +327,12 @@ function gameLoop() {
     ctx.drawImage(vidasImgs[contVidas], 7, 17);
 
     // atualizar tempo
-    const agora = Date.now();
-    if (jogoAtivo && contTempo > 0) {
-        if (agora - ultimoTimestamp >= 1000) {
-            contTempo--;
-            ultimoTimestamp = agora;
-        }
-    }
+    atualizarTempo();
 
-    // temporizador com fundo branco (apenas número)
-    const tempoX = 740;
-    const tempoY = 50;
-    const tempoWidth = 60;
-    const tempoHeight = 40;
-
+    // temporizador com fundo branco
+    const tempoX = 740, tempoY = 50, tempoWidth = 60, tempoHeight = 40;
     ctx.fillStyle = "white";
     ctx.fillRect(tempoX - 5, tempoY - 30, tempoWidth, tempoHeight);
-
     ctx.font = "30px Comic Sans MS";
     ctx.fillStyle = "black";
     ctx.fillText(contTempo, tempoX, tempoY);
@@ -333,15 +345,11 @@ function gameLoop() {
     atualizarCarros();
     carros.forEach(carro => ctx.drawImage(carro.img, carro.x, carro.y));
 
-    // entregas
-    checarEntregas();
-
     // fim ou vitória
     checarFim();
 
     requestAnimationFrame(gameLoop);
 }
-
 
 // -------------------------
 // Iniciar jogo
