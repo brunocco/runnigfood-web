@@ -11,10 +11,11 @@ let contTempo = 120;
 let contTotal = 0;
 let jogoAtivo = true;
 let musicaIniciada = false;
-let ultimoTimestamp = Date.now(); // para atualizar o tempo
+let ultimoTimestamp = Date.now();
+let nomeJogador = prompt("Digite seu nome:") || "Jogador";
 
 // -------------------------
-// Personagem com sprites (sem piscar)
+// Personagem com sprites
 // -------------------------
 class Personagem {
     constructor(x, y, largura, altura, sprites) {
@@ -23,10 +24,10 @@ class Personagem {
         this.largura = largura;
         this.altura = altura;
         this.sprites = sprites;
-        this.direcao = "down"; // down, up, left, right
+        this.direcao = "down";
     }
     draw() {
-        const s = this.sprites[this.direcao][0]; // sempre o primeiro sprite
+        const s = this.sprites[this.direcao][0];
         ctx.drawImage(s.img, s.sx, s.sy, s.sw, s.sh, this.x, this.y, this.largura, this.altura);
     }
 }
@@ -66,14 +67,12 @@ const carrosImgs = [
     carregarImagem("imagens/carro5.png"),
     carregarImagem("imagens/carro6.png")
 ];
-
 const vidasImgs = [
     carregarImagem("imagens/vazio.png"),
     carregarImagem("imagens/1cheio.png"),
     carregarImagem("imagens/2cheio.png"),
     carregarImagem("imagens/3cheio.png")
 ];
-
 const fim = carregarImagem("imagens/gameover.png");
 const venceu = carregarImagem("imagens/venceu.png");
 
@@ -86,7 +85,7 @@ const casaOk = new Audio("sons/casa_ok.mp3");
 const win = new Audio("sons/win.mp3");
 
 // -------------------------
-// Sprites do personagem por direção
+// Sprites do personagem
 // -------------------------
 const spriteFrames = {
     down: [{ img: spritesImg, sx: 0, sy: 0, sw: 44, sh: 44 }],
@@ -117,7 +116,6 @@ const casas = [
     { x: 370, y: 130, entregue: false },
     { x: 635, y: 130, entregue: false }
 ];
-
 const obstaculos = [
     { x: 0, y: 450, largura: 582, altura: 162 },
     { x: 0, y: 142, largura: 115, altura: 90 },
@@ -165,7 +163,6 @@ function checarColisao(carro) {
         entregador.y < carro.y + 30 &&
         entregador.y + entregador.altura > carro.y;
 }
-
 function checarColisaoObstaculo(nx, ny) {
     for (let obs of obstaculos) {
         if (nx < obs.x + obs.largura &&
@@ -179,7 +176,7 @@ function checarColisaoObstaculo(nx, ny) {
 }
 
 // -------------------------
-// Movimentação personagem com colisão
+// Movimentação personagem
 // -------------------------
 function moverPersonagem() {
     let nx = entregador.x;
@@ -195,7 +192,7 @@ function moverPersonagem() {
         if (casa.entregue) {
             let casaTopo = casa.y;
             if (ny < casaTopo && nx + entregador.largura > casa.x && nx < casa.x + 35) {
-                ny = casaTopo; 
+                ny = casaTopo;
             }
         }
     }
@@ -238,6 +235,26 @@ function checarEntregas() {
 }
 
 // -------------------------
+// Enviar placar para AWS
+// -------------------------
+function enviarPlacar() {
+    const dados = {
+        nome: nomeJogador,       // Nome do jogador
+        pontuacao: contTotal      // Pontuação do jogador
+    };
+
+    fetch("https://cob4njaje3.execute-api.us-east-1.amazonaws.com/dev/placar", { // URL completa com stage e rota
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
+    })
+    .then(res => res.json())
+    .then(resp => console.log("✅ Placar salvo:", resp))
+    .catch(err => console.error("❌ Erro ao salvar placar:", err));
+}
+
+
+// -------------------------
 // Fim ou vitória
 // -------------------------
 function checarFim() {
@@ -246,11 +263,13 @@ function checarFim() {
         musicaFundo.pause();
         ctx.drawImage(venceu, 0, 0);
         win.play();
+        enviarPlacar();
         setTimeout(resetGame, 5000);
     } else if (contVidas === 0 || contTempo <= 0) {
         jogoAtivo = false;
         musicaFundo.pause();
         ctx.drawImage(fim, 0, 0);
+        enviarPlacar();
         setTimeout(resetGame, 5000);
     }
 }
