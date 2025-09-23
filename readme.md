@@ -1,8 +1,34 @@
 # Running Food Game 🍔🚗
 
-Este projeto é um **jogo de entrega de comida**, onde o jogador deve levar pedidos às casas evitando obstáculos e carros. O placar do jogador é salvo em **AWS DynamoDB** via **AWS Lambda** e **API Gateway**.  
+Este projeto é um **jogo de entrega de comida**, onde o jogador deve levar pedidos às  3 casas evitando obstáculos e carros e num tempo maximo de 120 segundos. O placar do jogador é salvo em **AWS DynamoDB** via **AWS Lambda** e **API Gateway**.  
 
-O objetivo deste README é **documentar passo a passo** como o projeto funciona e como testá-lo.
+Descrevo **documentar passo a passo** como o projeto funciona e como testá-lo.
+
+---
+
+## 🗂 Diagrama do Projeto
+
+![Diagrama da Arquitetura](imagens/Diagrama.png)
+
+- O **frontend** envia a pontuação do jogador via `fetch()` para a API Gateway.  
+- O **API Gateway** recebe a requisição, gerencia o CORS e invoca a **Lambda**.  
+- A **Lambda** processa os dados e salva o placar no **DynamoDB**.  
+- O frontend recebe a confirmação de sucesso ou erro.
+
+---
+
+## 💰 Estimativa de Custos para Executar o Projeto
+
+Este projeto utiliza serviços da AWS que podem gerar custos, especialmente se forem usadas instâncias em produção. Abaixo está uma estimativa básica para desenvolvimento/teste:
+
+| Serviço AWS | Descrição | Custo Estimado (mensal) |
+|------------|-----------|-------------------------|
+| **Lambda** | Função para salvar o placar | Gratuito até 1M de execuções/mês, depois ~$0,20 por 1M execuções |
+| **API Gateway** | Endpoint REST para comunicação com o frontend | Gratuito até 1M chamadas/mês, depois ~$3,50 por 1M chamadas |
+| **DynamoDB** | Armazenamento de placares | Gratuito até 25GB e 25 RCUs/WCUs, depois conforme consumo (R$0,25/GB + R$0,00065/RCU/WCU por hora) |
+| **Total estimado para teste/dev** | - | Possivelmente gratuito, dependendo do uso |
+
+> ⚠️ Lembre-se: o custo real depende do tráfego do jogo, quantidade de jogadores e uso de recursos AWS.
 
 ---
 
@@ -25,6 +51,7 @@ runningfood-web/
 ├── game.js              # Lógica do jogo
 ├── imagens/             # Sprites e cenários
 ├── sons/                # Sons do jogo
+├── video/               # Demonstracao deuma partida
 └── README.md            # Documentação
 ```
 
@@ -42,6 +69,12 @@ runningfood-web/
    - Todas as casas forem entregues (vitória)
    - Ou acabar o tempo / perder todas as vidas (derrota)
 6. O placar será enviado automaticamente para a **AWS DynamoDB**.
+---
+
+### 🔗 Link para jogar
+> ⚠️ Devido a conversão do game ainda estou fazendo algumas melhorias, caso vejam alguma irregularidade no game estejam cientes.
+
+👉 [Clique aqui para jogar Running Food](https://brunocco.github.io/runnigfood-web/)
 
 ---
 
@@ -115,7 +148,7 @@ export const handler = async (event) => {
 - Endpoint: `https://<seu-api-id>.execute-api.us-east-1.amazonaws.com/dev/placar`
 - Método: `POST`
 - Método `OPTIONS` configurado para **CORS**
-- Integração: Lambda Function
+- Integração: Lambda Function nos dois métodos
 - **CORS habilitado** para permitir requisições do frontend hospedado no GitHub Pages
 
 ---
@@ -125,7 +158,7 @@ export const handler = async (event) => {
 1. Clone o repositório:
 
 ```bash
-git clone https://github.com/<seu-usuario>/runningfood-web.git
+git clone https://github.com/brunocco/runningfood-web.git
 ```
 
 2. Abra o projeto em um navegador ou hospede via **GitHub Pages**.
@@ -154,9 +187,9 @@ git clone https://github.com/<seu-usuario>/runningfood-web.git
 
 - Este projeto é um **exemplo de integração fullstack leve**, combinando frontend em Canvas 2D e backend serverless na AWS.
 - Pode ser expandido para:
-  - Ranking global de jogadores
-  - Diferentes níveis de dificuldade
-  - Multiplataforma (mobile, desktop)
+  - Ranking global de jogadores(ranking baseado em quantidades de casas visitadas)
+  - Diferentes níveis de dificuldade (melhorias futuras)
+  - Multiplataforma (mobile(melhorias futuras), desktop)
 
 ---
 
