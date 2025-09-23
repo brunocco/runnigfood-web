@@ -243,7 +243,7 @@ function enviarPlacar() {
         pontuacao: contTotal      // Pontuação do jogador
     };
 
-    fetch("https://cob4njaje3.execute-api.us-east-1.amazonaws.com/dev/placar", { // URL completa com stage e rota
+    fetch("https://id-seu-api.execute-api.us-east-1.amazonaws.com/dev/placar", { // URL completa com stage e rota
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dados)
