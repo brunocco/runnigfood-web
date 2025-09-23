@@ -164,5 +164,5 @@ git clone https://github.com/<seu-usuario>/runningfood-web.git
 
 Bruno Cesar  
 [GitHub](https://github.com/brunocco)  
-[LinkedIn](https://www.linkedin.com/in/brunocco)  
+[LinkedIn](https://www.linkedin.com/in/bruno-cesar-704265223/)  
 
